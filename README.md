@@ -6,4 +6,4 @@ Metal Electronics Mediate Steric and Coordination Number Effects on Reductive El
 
 by
 
-Michael K. Bogdos,1 Sven Roediger,1 Patrick Müller,1 Fabio Masero,2 Bill Morandi*1 
+Michael K. Bogdos, Sven Roediger, Patrick Müller, Fabio Masero, Bill Morandi
