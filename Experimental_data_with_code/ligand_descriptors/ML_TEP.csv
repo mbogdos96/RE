@@ -1,0 +1,10 @@
+Ligand,SmileStrings,TolmanPrediction,L_type
+PAd2Bu,CCCCP([C@@]12C[C@H](C[C@@H]3C2)C[C@H](C3)C1)[C@]45C[C@@H]6C[C@@H](C[C@@H](C6)C5)C4,2068.02,monodentate
+PMes3,CC1=CC(C)=CC(C)=C1P(C2=C(C)C=C(C)C=C2C)C3=C(C)C=C(C)C=C3C,2060.85,monodentate
+PtBu3,CC(P(C(C)(C)C)C(C)(C)C)(C)C,2054.63,monodentate
+PtBu2Np,CC(P(CC(C)(C)C)C(C)(C)C)(C)C,2054.41,monodentate
+PtBu2Cy,CC(P(C(C)(C)C)C1CCCCC1)(C)C,2054.31,monodentate
+dppe,CP(C1=CC=CC=C1)C2=CC=CC=C2,2067.49,bidentate
+Fdppe,CP(C(C(F)=C(C(F)=C1F)F)=C1F)C(C(F)=C(C(F)=C2F)F)=C2F,2077.58,bidentate
+dcype,CP(C1CCCCC1)C2CCCCC2,2059.92,bidentate
+BISBI,Cc1ccccc1CP(C2=CC=CC=C2)C3=CC=CC=C3,2063.11,bidentate

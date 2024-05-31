@@ -1,0 +1,10 @@
+Ligand,L_type,Pd_Mulliken_charge,HOMO_energy
+PtBu3,monodentate,-0.01634,-0.27961
+PAd2Bu,monodentate,-0.05214,-0.27751
+PtBu2Np,monodentate,-0.00663,-0.27877
+PtBu2Cy,monodentate,0.034163,-0.27831
+PMes3,monodentate,-0.04142,-0.27694
+dppe,bidentate,-0.22202,-0.27514
+Fdppe,bidentate,-0.00283,-0.2809
+dcype,bidentate,-0.32895,-0.27487
+BIPHEP,bidentate,-0.30029,-0.27721
