@@ -1,0 +1,1 @@
+# Data in this directory include CV and SWV data, extracted values from DFT calculations such as CO stretching frequencies, calculated barriers, measured barriers, measured half lives, buried volumes etc
