@@ -102,7 +102,8 @@ ind_metric_plot <- ind_metric_make_plot(
   "Absolute Probability Correct",
   "Metric")
 
-# Filter data to look at the ones that are not redundant and only when
+# Filter data to look at the ones that are 
+# not redundant and only when
 # the metrics like AICc can actually be computed correctly
 non_red_metrics <- prob_ind_metric %>%
   ungroup %>%
@@ -118,7 +119,8 @@ non_red_ind_plot <- ind_metric_make_plot(
   "Absolute Probability Correct",
   "Metric")
 
-# Plot for absolute probability of being correct with some metrics left out
+# Plot for absolute probability of being 
+# correct with some metrics left out
 leave_some_out_plot <- ind_metric_make_plot(
   agreement_prob,
   abs_prob_correct,
@@ -126,7 +128,8 @@ leave_some_out_plot <- ind_metric_make_plot(
   "Absolute Probability Correct",
   "Number of Allowed Disagreements")
 
-# Plot for relative probability of being correct with some metrics left out
+# Plot for relative probability of being 
+# correct with some metrics left out
 leave_some_out_plot_rel <- ind_metric_make_plot(
   agreement_prob,
   prob_correct,
@@ -166,7 +169,8 @@ prob_agree_non_red_plot <- ind_metric_make_plot(
   "Probability of Metric Agreement",
   "Number of Allowed Disagreements")
 
-# Plot some data at three levels of noise for three different ground truth
+# Plot some data at three levels of noise for 
+# three different ground truth
 # models to show what they look like
 ex_dat_1 <- generate_data(15,0.25,1,915)
 ex_dat_2 <- generate_data(15,1,1,3544)
@@ -197,14 +201,19 @@ ex_dat_plot_fn <- function(list_df){
   }
   
   all_plots <- ggarrange(list_of_plots[[1]] +
-                           theme(axis.title.x = element_text(colour = "white")),
+                           theme(
+                             axis.title.x = element_text(
+                               colour = "white")),
                          list_of_plots[[2]] +
                            theme(axis.text.y = element_blank(),
-                                 axis.title.y = element_text(colour = "white")),
+                                 axis.title.y = element_text(
+                                   colour = "white")),
                          list_of_plots[[3]] +
                            theme(axis.text.y = element_blank(),
-                                 axis.title.y = element_text(colour = "white"),
-                                 axis.title.x = element_text(colour = "white")),
+                                 axis.title.y = element_text(
+                                   colour = "white"),
+                                 axis.title.x = element_text(
+                                   colour = "white")),
                          nrow = 1,
                          ncol = 3,
                          common.legend = T,
@@ -267,7 +276,9 @@ consensus_make_plot <- function(df) {
            x = "Sample Size") +
       ylim(0,1) +
       themething +
-      scale_color_brewer(palette = "Dark2") +
+      scale_color_manual(values = c("#636C9D",
+                                     "#B71B1B",
+                                     "#4E525B")) +
       theme(plot.title = element_text(size = 10))
     
     # Add the plot to the list of plots
@@ -280,7 +291,8 @@ consensus_make_plot <- function(df) {
   gird <- ggarrange(metric_plotlist[[1]],
                     metric_plotlist[[2]] +
                       theme(axis.text.y = element_blank(),
-                            axis.title.y = element_text(colour = "white")),
+                            axis.title.y = element_text(
+                              colour = "white")),
                     common.legend = T,
                     legend = "bottom",
                     ncol = 2,
@@ -289,4 +301,5 @@ consensus_make_plot <- function(df) {
   return(gird)
 }
 
-consensus_probability_plot <- consensus_make_plot(consensus_prob)
+consensus_probability_plot <- consensus_make_plot(
+  consensus_prob)
