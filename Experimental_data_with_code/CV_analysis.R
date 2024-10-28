@@ -1,7 +1,7 @@
 library(dplyr)
 
-# Load the data that is in the file which extract the value for E1/2 Fc 
-# to nomralise data and also for subfolder path
+# Load the data that is in the file which extract the 
+# value for E1/2 Fc to nomralise data
 source("Fc_standard.R")
 source("SW_analysis.R")
 
@@ -22,9 +22,8 @@ source("SW_analysis.R")
 #=====================================
 # File selection for scan rate studies
 #=====================================
-
 # Find the files with the CV data 
-CV_list <- list.files(subfolder,
+CV_list <- list.files(file.path("./MBPdG10"),
                            pattern = ".*_isol.*\\.csv$",
                            full.names = TRUE)
 
@@ -244,15 +243,15 @@ coefficients_Current_vs_sqrtScanrate <- ligands_scanrate %>%
 #==========================================
 
 # Find the files with the CV data for the first peak isolated
-CV_full_list <- list.files(subfolder,
+CV_full_list <- list.files(file.path("./MBPdG10"),
                            pattern = ".*_full.*\\.csv$",
                            full.names = TRUE)
 
 #=========================================
 # Data cleaning for scan direction studies
 #=========================================
-
-# Create empty dataframe for CVs of first isolated oxidative peak w/scan rate
+# Create empty dataframe for CVs of first isolated 
+# oxidative peak w/scan rate
 CV_df_blank <- data.frame(Potential = numeric(),
                           Current = numeric(),
                           Scan_direction = character(),
