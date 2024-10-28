@@ -3,16 +3,11 @@ library(dplyr)
 #=========================
 #Dealing with Fc standards
 #=========================
-
-# Get the subfolder path
-subfolder <- file.path(getwd(), 
-                       "MBPdG10")
-
 # Create a list for storing Fc half wave potentials (E1/2)
 Fc_half_wave_potentials <- list()
 
 # Get file name matching the pattern "*_Fc.csv" in the MBPdG10 folder
-Fc_file_list <- list.files(subfolder, 
+Fc_file_list <- list.files(file.path("./MBPdG10"), 
                            pattern = "*_Fc.csv", 
                            full.names = TRUE)
 
@@ -53,8 +48,8 @@ for (file_name in Fc_file_list) {
 # The values seen for Fc as an internal standard can vry quite a lot with some
 # ligands, therefore these must be excluded, To do so, we are applying an 
 # arbitrary cutoff of 10% difference to the external ferrocene standard
-ext_value <- Fc_E_half$Fc_E[Fc_E_half$Ligand == "Ext"] # This finds the value of the external Fc ref in the dataframe
-Fc_E_filtered <- Fc_E_half[abs(Fc_E_half$Fc_E - ext_value) <= 0.1 * ext_value, ] # This filters out values which are more than 10% different
+ext_value <- Fc_E_half$Fc_E[Fc_E_half$Ligand == "Ext"]
+Fc_E_filtered <- Fc_E_half[abs(Fc_E_half$Fc_E - ext_value) <= 0.1 * ext_value, ]
 
 # Calculate the average of the remaining values, so you are combining both 
 # the external and internal standard Fcs here
