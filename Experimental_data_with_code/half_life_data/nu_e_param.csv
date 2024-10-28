@@ -1,0 +1,8 @@
+Fragment,E(HOMO) /eV,E(LUMO) / eV,chemical potential / eV,hardness / eV,electrophilicity / eV
+F4-NClMs,-4.3759,4.8804,N/A,N/A,N/A
+F4-NMs,-4.0798,5.1131,N/A,N/A,N/A
+F4-NTf,-4.6222,4.7929,N/A,N/A,N/A
+CF3-NMs,-4.0803,4.3722,N/A,N/A,N/A
+Ph,N/A,-7.1909,-11.396,8.4102,1.676286111
+OMe,N/A,-6.9357,-10.3903,6.9092,1.548378243
+NMe2,N/A,-6.4835,-9.55535,6.1437,1.354611238
