@@ -5,13 +5,13 @@
 # Define the replace_backbone_labels function
 replace_backbone_labels <- function(x) {
   ifelse(x == "CF3-NMs-Ph", 
-         "CF[3]*-NMs-Ph",
+         "CF[3]*-NMs-H",
          ifelse(x == "CF3-NMs-OMe", 
                 "CF[3]*-NMs-OMe",
                 ifelse(x == "CF3-NMs-NMe2", 
                        "CF[3]*-NMs-NMe[2]",
                        ifelse(x == "F4-NMs-Ph", 
-                              "F[4]*-NMs-Ph",
+                              "F[4]*-NMs-H",
                               ifelse(x == "F4-NMs-OMe", 
                                      "F[4]*-NMs-OMe",
                                      ifelse(x == "F4-NMs-NMe2", 
