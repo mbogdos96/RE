@@ -6,8 +6,8 @@ source("generate_simulated_data.R")
 #===========================
 # Individual metric analysis
 #===========================
-
-# Function for finding which model each metric predicts is best
+# Function for finding which model 
+# each metric predicts is best
 analyse_simulations <- function(df) {
   
   grouped_df <- df[[3]] %>%
@@ -88,7 +88,8 @@ calculate_individual_metric_truth <- function(df){
 }
 
 # Run the truth finding function on the simulated data
-binary_truth_df <- calculate_individual_metric_truth(analysed_simulations)
+binary_truth_df <- calculate_individual_metric_truth(
+  analysed_simulations)
 
 # Function for calculating probabilities over simulations for given levels of
 # noise and ground truth
@@ -116,14 +117,16 @@ calc_probabilities_individual_metrics <- function(df){
   return(final_df)
 }
 
-# Run single metric probabilitity calculation function on simulated data
-prob_ind_metric <- calc_probabilities_individual_metrics(binary_truth_df)
+# Run single metric probabilitity calculation function 
+# on simulated data
+prob_ind_metric <- calc_probabilities_individual_metrics(
+  binary_truth_df)
 
 #============================
 # Interrogate ANOVA selection
 #============================
-
-# Function for finding which model each ANOVA interrogation metric is best
+# Function for finding which model each 
+# ANOVA interrogation metric is best
 analyse_ANOVA <- function(df) {
   
   grouped_df <- df[[3]] %>%
@@ -147,7 +150,6 @@ analyse_ANOVA <- function(df) {
                   Ground_Truth_Model,
                   SD_Noise,
                   Sim_no,
-                  ANOVA_max_p_val,
                   ANOVA_std_sig,
                   ANOVA_high_sig,
                   ANOVA_low_sig) %>%
@@ -157,7 +159,8 @@ analyse_ANOVA <- function(df) {
   return(grouped_df)
 }
 
-# Apply the ANOVA criteria selection to the simulated data
+# Apply the ANOVA criteria selection to the 
+# simulated data
 ANOVA_analysis_df <- analyse_ANOVA(sim_results)
 
 # Check if ANOVA conditions select ground truth
@@ -179,17 +182,20 @@ ANOVA_truth <- function(df){
 ANOVA_truth_df <- ANOVA_truth(ANOVA_analysis_df)
 
 # Apply probability calculation function to ANOVA df
-ANOVA_prob <- calc_probabilities_individual_metrics(ANOVA_truth_df)
+ANOVA_prob <- calc_probabilities_individual_metrics(
+  ANOVA_truth_df)
 
 #=================================
 # Combinations of metrics analysis
 #=================================
-
-# Function for calculating probability correct for combination of m - n 
-# metrics
-probability_metric_combos <- function(df, n_met, n_sims){
+# Function for calculating probability 
+# correct for combination of m - n metrics
+probability_metric_combos <- function(df, 
+                                      n_met, 
+                                      n_sims){
   
-  # Filter out simulation number column as it is not needed
+  # Filter out simulation number column as 
+  # it is not needed
   df <- df %>%
     dplyr::select(-Sim_no)
   
@@ -258,8 +264,9 @@ probability_metric_combos <- function(df, n_met, n_sims){
           
  return(final_df)}
 
-# Function for applying the probability function to a list of 
-# numbers which determines how many are left out
+# Function for applying the probability function 
+# to a list of  numbers which determines how many 
+# are left out
 leave_how_many_out <- function(df,numbers,n_sims){
   
   # Initialize df list
@@ -268,12 +275,12 @@ leave_how_many_out <- function(df,numbers,n_sims){
   # Loop through provided number vector
   for (number in numbers) {
     
-   # Create temporary df which stores result of applying function
-   # for multi metric probablity
+   # Create temporary df which stores result of 
+   # applying function for multi metric probablity
    temp_df <- probability_metric_combos(df,
                               number,
                               n_sims) %>%
-     mutate(no_par_left_out = (number - 1)) # create column which counts metric
+     mutate(no_par_left_out = (number - 1))
    
    # Append to list
    final_df <- c(final_df,
@@ -290,7 +297,8 @@ leave_how_many_out <- function(df,numbers,n_sims){
 # How many do I want left out; 1 means all agree etc
 range_of_metrics <- c(1,2,3)
 
-# How many simulations per combo of noise, gt and sample size
+# How many simulations per combo of noise, 
+# gt and sample size
 number_of_sims <- 250
 
 # Calculate probability of agreement
@@ -298,7 +306,8 @@ agreement_prob <- leave_how_many_out(analysed_simulations,
                                      range_of_metrics,
                                      number_of_sims)
 
-# Filter the data so that only AICc, BIC and ANOVA remain
+# Filter the data so that only 
+# AICc, BIC and ANOVA remain
 non_red_metrics_analysed <- analysed_simulations %>%
   dplyr::select(N_Obs,
                 Ground_Truth_Model,
@@ -309,14 +318,18 @@ non_red_metrics_analysed <- analysed_simulations %>%
                 ANOVA_p_val_sel)
 
 # Calculate probabilities for non redundant metrics
-non_red_prob <- leave_how_many_out(non_red_metrics_analysed,
-                                   c(1,2),
-                                   250)
+non_red_prob <- leave_how_many_out(
+  non_red_metrics_analysed,
+  c(1,2),
+  250)
 
-# Function for sorting when consensus agrees on a particular number
-metrics_agree_model <- function(df, n_met){
+# Function for sorting when consensus 
+# agrees on a particular number
+metrics_agree_model <- function(df, 
+                                n_met){
   
-  # Filter out simulation number column as it is not needed
+  # Filter out simulation number column 
+  # as it is not needed
   df <- df %>%
     dplyr::select(-Sim_no)
   
@@ -335,15 +348,18 @@ metrics_agree_model <- function(df, n_met){
     ux[which.max(tabulate(match(x, ux)))]
   }
   
-  # Group by N_Obs and SD_Noise and what the agreement between models is
+  # Group by N_Obs and SD_Noise and 
+  # what the agreement between models is
   treat_df <- df %>%
     group_by(N_Obs, SD_Noise) %>%
     rowwise() %>%
     filter(n_distinct(c_across(other_cols)) <= n_met) %>%
-    mutate(metric_consensus = calculate_mode(c_across(other_cols))) %>%
+    mutate(metric_consensus = calculate_mode(
+      c_across(other_cols))) %>%
     group_by(metric_consensus)
   
-  # df which contains rows where all metrics agree and are correct
+  # df which contains rows where all 
+  # metrics agree and are correct
   correct_df <- treat_df %>%
     filter(metric_consensus 
            == as.numeric(Ground_Truth_Model)) %>%
@@ -360,12 +376,14 @@ metrics_agree_model <- function(df, n_met){
                  metric_consensus,
                  SD_Noise)
   
-  # df with only combos of models and noise to populate with probs
+  # df with only combos of models 
+  # and noise to populate with probs
   only_vals <- df %>%
     group_by(N_Obs, SD_Noise) %>%
     rowwise() %>%
     filter(n_distinct(c_across(other_cols)) <= 3) %>%
-    mutate(metric_consensus = calculate_mode(c_across(other_cols))) %>%
+    mutate(metric_consensus = calculate_mode(
+      c_across(other_cols))) %>%
     ungroup() %>%
     dplyr::select(N_Obs,
                   SD_Noise,
@@ -386,19 +404,26 @@ metrics_agree_model <- function(df, n_met){
   
   return(final_df)}
 
-con_prob_1 <- metrics_agree_model(non_red_metrics_analysed,
+# Apply so that all non redundant metrics agree
+con_prob_1 <- metrics_agree_model(
+  non_red_metrics_analysed,
                                       1) %>%
   ungroup() %>%
   mutate(no_par_left_out = 0)
 
-con_prob_2 <- metrics_agree_model(non_red_metrics_analysed,
+# Apply so that all but one non redundanant 
+# metrics agree
+con_prob_2 <- metrics_agree_model(
+  non_red_metrics_analysed,
                                   2) %>%
   ungroup() %>%
   mutate(no_par_left_out = 1)
 
+# Combine the dfs
 consensus_prob <- rbind(con_prob_1,
                         con_prob_2)
 
+# Filter for the n that you actually have for the study
 prob_corr_final <- consensus_prob %>%
   filter(N_Obs == 9 & no_par_left_out == 1) %>%
   dplyr::select(-n,
@@ -409,8 +434,10 @@ prob_corr_final <- consensus_prob %>%
   rename("Sample Size" = N_Obs,
          "Noise Level" = SD_Noise,
          "Selected Model" = metric_consensus,
-         "Probability of Matching Ground Truth" = prob_correct)
+         "Probability of Matching Ground Truth" = 
+           prob_correct)
 
+# Filter data to find deltaAIC values
 delta_AICc_data <- sim_results[[3]] %>%
   group_by(N_Obs, 
            Ground_Truth_Model,
@@ -427,7 +454,8 @@ delta_AICc_data_less <- delta_AICc_data %>%
   mutate(picks_model = ifelse(delta_AICc_1_2 > 0,
                           "1",
                           "2"),
-         is_corr = ifelse(picks_model == Ground_Truth_Model,
+         is_corr = ifelse(picks_model == 
+                            Ground_Truth_Model,
                           T,
                           F))
 
