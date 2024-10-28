@@ -10,7 +10,7 @@ source("common_functions.R")
 #  Read in csvs for subfolder
 # Get a list of all CSV files in the eyring folder
 csv_files <- list.files(path = "./eyring", 
-                        pattern = "\\.csv$", 
+                        pattern = "^eyring", 
                         full.names = TRUE)
 
 import_eyring <- function(files){
@@ -77,12 +77,10 @@ fit_k_eyring <- function(df_list) {
     predicted <- predict(fit, data.frame(time_s = sim_time_s))
     
     # Create dataframe for predicted values
-    sim_df <- data.frame(Ligand = rep(df_list[[df]]$Ligand[1], 
-                                      length(sim_time_s)),
-                         Backbone = rep(df_list[[df]]$Backbone[1], 
-                                        length(sim_time_s)),
-                         time_s = sim_time_s,
-                         Pd_predicted = predicted)
+    sim_df <- data.frame(time_s = sim_time_s,
+                         Pd_predicted = predicted) %>%
+      mutate(Ligand = unique(df_list[[df]]$Ligand),
+             Backbone = unique(df_list[[df]]$Backbone))
     
     # Merge the predicted df of the loop with the one outside the loop
     df_predicted <- bind_rows(df_predicted,
@@ -90,13 +88,13 @@ fit_k_eyring <- function(df_list) {
     
     # Extract ligand, backbone, T and coefficients
     df_row <- df_list[[df]] %>%
-      slice(1) %>%
-      dplyr::select(Ligand, 
-                    Backbone, 
-                    Temperature_K) %>%
+      dplyr::select(c(Ligand,
+                      Backbone,
+                      Temperature_K)) %>%
       mutate(Pd_initial_molar = coef(fit)["A"],
              rate_constant = coef(fit)["B"],
-             baseline_correction = coef(fit)["C"])
+             baseline_correction = coef(fit)["C"]) %>%
+      slice_head()
     
     # Append L,backbone, T, coef to output dataframe
     df_out <- bind_rows(df_out, 
@@ -109,7 +107,8 @@ fit_k_eyring <- function(df_list) {
 }
 
 # Apply function to get rate constants and plots
-eyring_parameters_and_predictions <- fit_k_eyring(eyring_data_list)
+eyring_parameters_and_predictions <- fit_k_eyring(
+  eyring_data_list)
 
 # Separate out the df used for the table in the md and fix naming
 eyring_summary <- eyring_parameters_and_predictions$Rate_constants_eyring %>%
@@ -127,14 +126,16 @@ eyring_plots <- function(pred_df,
   
   for (df in seq_along(df_list)){
     # Fix the labels in each df
-    temp_df <- data.frame("Ligand" = as.character(
-      df_list[[df]]$Ligand[1]),
-                          "Backbone" = as.character(
-                            df_list[[df]]$Backbone[1])) %>%
-    mutate(Backbone_fixed = sapply(Backbone,
-                                   replace_backbone_labels),
-           Ligand_fixed = sapply(Ligand,
-                                 replace_ligand_expression_og),
+    temp_df <- data.frame("Ligand" = c(
+                          unique(df_list[[df]]$Ligand)),
+                          "Backbone" = c(
+                          unique(df_list[[df]]$Backbone))) %>%
+    mutate(Backbone_fixed = sapply(
+                            Backbone,
+                            replace_backbone_labels),
+           Ligand_fixed = sapply(
+                          Ligand,
+                          replace_ligand_expression_og),
            Fixed_name = paste(Backbone_fixed,
                               "*-",
                               Ligand_fixed))
@@ -149,8 +150,8 @@ eyring_plots <- function(pred_df,
                      y = Pd_molar),
                  size = 3) +
       geom_line(data = filter(pred_df,
-                              Ligand == df_list[[df]]$Ligand[1],
-                              Backbone == df_list[[df]]$Backbone[1]),
+                              Ligand == unique(df_list[[df]]$Ligand),
+                              Backbone == unique(df_list[[df]]$Backbone)),
                 aes(x = time_s,
                     y = Pd_predicted),
                 linewidth = 1,
@@ -158,9 +159,9 @@ eyring_plots <- function(pred_df,
       themething
     
     # Name the ggplot object
-    plot_name <- paste0(df_list[[df]]$Ligand[1], 
+    plot_name <- paste0(unique(df_list[[df]]$Ligand), 
                         "_", 
-                        df_list[[df]]$Backbone[1])
+                        unique(df_list[[df]]$Backbone))
     
     # Add ggplot object to list
     ggplot_list[[plot_name]] <- plot
@@ -169,10 +170,12 @@ eyring_plots <- function(pred_df,
   return(ggplot_list)
 }
 
+# Create the plots
 eyring_plot_list <- eyring_plots(
   eyring_parameters_and_predictions$Predicted_values_eyring,
   eyring_data_list)
 
+# Remove the plot for the NMe2 backbone
 eyring_plots_rm_NMe2 <- eyring_plot_list[-3]
 
 # Wrap all eyring plots into one
