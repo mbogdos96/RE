@@ -516,3 +516,44 @@ back_front_strain_plot <- ggplot() +
        y = "S4' P(trans-N)") +
   theme(legend.position = "none") +
   themething
+
+# Check errors
+# Import data with errors and merge w/df used
+xrd_df_se <- read.csv(file.path(
+  "./complex_descriptors/Pd_Xray_w_se.csv")) %>%
+  merge(fs_df_ms) %>%
+  mutate(se_S4_P_trans_N = sqrt(Pd.P_transN.C1_angle_se^2 +
+                                Pd.P_transN.C2_angle_se^2 +
+                                Pd.P_transN.C3.bridge._angle_se^2 +
+                                C1.P_transN.C2_angle_se^2 +
+                                C1.P_transN.C3.bridge._angle_se^2 +
+                                C2.P_transN.C3.bridge._angle_se^2),
+         se_S4_P_trans_C = sqrt(Pd.P_transC.C3.bridge._angle_se^2 +
+                                Pd.P_transC.C2_angle_se^2 +
+                                Pd.P_transC.C1_angle_se^2 +
+                                C2.P_transC.C3.bridge._angle_se^2 +
+                                C1.P_transC.C3.bridge._angle_se^2 +
+                                C1.P_transC.C2_angle_se^2),
+         se_phi_PtN = sqrt(Pd.P_transN.C1_angle_se^2
+                           + Pd.P_transN.C2_angle_se^2
+                           + Pd.P_transN.C3.bridge._angle_se^2
+                           + Pd.P_transN.C1_angle_se^2),
+         se_phi_PtC = sqrt(Pd.P_transC.C1_angle_se^2
+                           + Pd.P_transC.C2_angle_se^2
+                           + Pd.P_transC.C3.bridge._angle_se^2
+                           + Pd.P_transC.C3.bridge._angle_se^2)) %>%
+  mutate(upr_S4_PtN = S4_prime_P_trans_N + se_S4_P_trans_N,
+         lwr_S4_PtN = S4_prime_P_trans_N - se_S4_P_trans_N,
+         upr_phi_PtN = max_dev_angle_PtN + se_phi_PtN,
+         lwr_phi_PtN = max_dev_angle_PtN - se_phi_PtN)
+
+# Add error bars to plot
+fig_2_strain_plot_se <- back_front_strain_plot +
+  geom_errorbar(data = xrd_df_se,
+                aes(x = max_dev_angle_PtN,
+                    ymax = upr_S4_PtN,
+                    ymin = lwr_S4_PtN)) +
+  geom_errorbarh(data = xrd_df_se,
+                 aes(y = S4_prime_P_trans_N,
+                     xmin = lwr_phi_PtN,
+                     xmax = upr_phi_PtN))

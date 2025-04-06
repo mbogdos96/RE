@@ -291,91 +291,83 @@ lit_pred_plot_pub <- lit_pred_plot(lit_df_filt_outliers,
 scale_alpha(range = c(0.25,1),
             limits = c(-6.5,0))
 
-# By ligand
-lig_grid_plot <- lit_pred_plot(lit_pred_df %>%
-  filter(Ligand %in% c("PtBu3",
-                       "SIPr",
-                       "RuPhos",
-                       "dppe")),
-                               -11,8,3) +
-  facet_wrap(~ Ligand) +
-  theme(legend.position = "none")
+#===========================
+# Additional checks on model
+#===========================
+# Check residuals
+residuals_lit_model <- ggplot(data = 
+                                data.frame(
+                                      
+                                  comb_mod_lit$residuals),
+                              aes(x = 
+                                    comb_mod_lit.residuals)) +
+  geom_histogram(binwidth = 1) +
+  theme_classic()
 
-# By ligand for manuscript figure
-lig_grid_plot_ms <- lit_pred_plot(lit_pred_df %>%
-    filter(Ligand %in% c("PtBu3",
-                         "dppe")),
-                               -8,7,3) +
-  facet_wrap(~ Ligand) +
-  theme(legend.position = "none") +
+# Mixed/random effects models for ligand
+library(lme4)
+
+# Filter for ligands that are represented more than 5 times
+lit_dat_L_groups <- subsample_lit_df %>%
+  filter(Ligand %in% c("PtBu3", 
+                       "dppe", 
+                       "RuPhos", 
+                       "SIPr"))
+
+#=============================================
+# Models which cannot be accurately determined
+# because of lack of data
+#=============================================
+# Mixed effects model for ligand
+L_mix_eff_int_mod <- lmer(data = lit_dat_L_groups,
+                        logk_rt ~ Soln_VIP_eV 
+                        + V_bur 
+                        + Nucleophilicity_eV 
+                        + Electrophilicity_eV
+                        + (1 | Ligand))
+
+# Random effects model for ligand
+L_uncor_mod <- lmer(data = lit_dat_L_groups,
+                    logk_rt ~ Soln_VIP_eV 
+                    + V_bur 
+                    + Nucleophilicity_eV 
+                    + Electrophilicity_eV 
+                    + (Soln_VIP_eV | Ligand))
+
+# Successful predictions for illustration
+# Fixed effects for ligand aka varying intercept
+L_fix_eff_mod <- lm(data = lit_dat_L_groups,
+                    logk_rt ~ Soln_VIP_eV 
+                    + V_bur 
+                    + Nucleophilicity_eV 
+                    + Electrophilicity_eV
+                    + Ligand)
+
+# Use VIP interaction to check for fixed intercept
+# aka varying slope only
+L_int_mod <- lm(data = lit_dat_L_groups,
+                          logk_rt ~ Soln_VIP_eV 
+                          + V_bur
+                          + Nucleophilicity_eV 
+                          + Electrophilicity_eV
+                          + Ligand:Soln_VIP_eV)
+
+# Add predictions from models to df
+lit_dat_L_groups_pred <- lit_dat_L_groups %>%
+  mutate(pred_logk_factor = predict(L_fix_eff_mod,
+                                    lit_dat_L_groups),
+         pred_res_factor = logk_rt - pred_logk_factor,
+         pred_logk_int = predict(L_int_mod,
+                                 lit_dat_L_groups),
+         pred_res_int = logk_rt - pred_logk_int)
+
+# Plot predicted v. observed
+per_L_pred_plot <- lit_pred_plot(lit_dat_L_groups_pred %>%
+                         mutate(pred_logk = 
+                                  pred_logk_factor,
+                                pred_res = pred_res_factor),
+              -9,
+              7,
+              3) +
   scale_alpha(range = c(0.25,1),
-              limits = c(-5,0))
-
-# Apply the model to each group of ligand 
-# that has enough data
-# Make function to do so
-apply_lit_mod_per_L <- function(inp_df,
-                                L){
-  
-  df_filt <- inp_df %>%
-    filter(Ligand == as.character({{L}}))
-  
-  mod_filt <- lm(data = df_filt,
-                               logk_rt ~ Soln_VIP_scaled 
-                               + Vbur_scaled 
-                               + Nu_scaled + Electr_scaled)
-  
-  df_filt_pred <- df_filt %>%
-    mutate(pred_logk = predict(mod_filt,
-                                 df_filt))
-  
-  out_list <- list(df_filt_pred,
-                   summary(mod_filt))
-  
-  return(out_list)
-}
-
-# PtBu3
-lit_filt_PtBu3 <- apply_lit_mod_per_L(subsample_lit_df,
-                                      "PtBu3")
-
-# SIPr
-lit_filt_SIPr <- apply_lit_mod_per_L(subsample_lit_df,
-                                      "SIPr")
-
-# dppe
-lit_filt_dppe <- apply_lit_mod_per_L(subsample_lit_df,
-                                     "dppe")
-
-# RuPhos
-lit_filt_RuPhos <- apply_lit_mod_per_L(subsample_lit_df,
-                                     "RuPhos")
-
-# Combine data to plot
-lit_pred_df_per_L <- lit_filt_PtBu3[[1]] %>%
-  rbind(lit_filt_SIPr[[1]],
-        lit_filt_dppe[[1]],
-        lit_filt_RuPhos[[1]]) %>%
-  mutate(pred_res = pred_logk - logk_rt)
-
-# Create plot
-per_L_adj_mod_plot <- lit_pred_plot(lit_pred_df_per_L,
-                                    -9,
-                                    6,
-                                    3) +
-  facet_wrap(~ Ligand) +
-  theme(legend.position = "none")
-
-# Only two Ls for ms figure
-per_L_adj_mod_plot_ms <- lit_pred_plot(
-  lit_pred_df_per_L %>%
-    filter(Ligand %in%
-             c("dppe",
-               "PtBu3")),
-                                    -8,
-                                    7,
-                                    3) +
-  facet_wrap(~ Ligand) +
-  theme(legend.position = "none") +
-  scale_alpha(range = c(0.25,1),
-              limits = c(-5,0))
+              limits = c(-6.5,0))
