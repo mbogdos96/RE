@@ -24,6 +24,7 @@ source("SW_plots.R")
 #===================
 # Free L descriptors
 #===================
+
 #============
 # Descriptors
 #============
@@ -366,20 +367,20 @@ mk_desc_corr_plot <- function(inp_df,
 
 # Create the plot
 free_L_complex_E_plot <- mk_desc_corr_plot(pdcy_free_L_df,
-                                           Potential,
                                            Potential_free_L,
+                                           Potential,
                                            0.1,
                                            0,
                                            0.1,
                                            0,
-                                           F,F,T,F) +
-  labs(y = expression(paste(
+                                           F,F,F,F) +
+  labs(x = expression(paste(
     E^{ox},
     " Free L (Fc/",
     {Fc}^{"+"},
     ", V)"
   )),
-  x = expression(paste(
+  y = expression(paste(
     E^{ox},
     " Palladacycle (Fc/",
     {Fc}^{"+"},
@@ -437,8 +438,9 @@ plot_Eox_CO_free_L <- ggplot(data = CO_EOx_free_L_df,
 # Combined plot for Ext Dat Fig 2
 E_ox_no_corr_plot <- plot_Eox_CO_free_L +
   free_L_complex_E_plot +
-  plot_layout(nrow = 2,
-              ncol = 1)
+  plot_layout(nrow = 1,
+              ncol = 2,
+              axes = "collect")
 
 # Correlation between free L HOMO and 
 HOMO_Eox_free_L_plot <- mk_desc_corr_plot(
@@ -479,10 +481,12 @@ Mull_plot <- mk_desc_corr_plot(Pd_charges,
                                . %>%
                                  filter(
                                    L_type == "monodentate"),
-                               T,F) +
-  labs(x = expression(paste("Potential (V, Fc/", 
-                            {Fc^{"+"}} ,
-                            ")")),
+                               F,F) +
+  labs(x = expression(paste(
+    E^{ox},
+    " Palladacycle (Fc/",
+    {Fc}^{"+"},
+    ", V)")),
        y = "Mulliken Charge at Pd") +
   themething +
   theme(legend.position = "none")
@@ -501,10 +505,12 @@ HOMO_plot <- mk_desc_corr_plot(Pd_charges,
                                . %>%
                                  filter(
                                    L_type == "monodentate"),
-                               T,F) +
-  labs(x = expression(paste("Potential (V, Fc/", 
-                            {Fc^{"+"}} ,
-                            ")")),
+                               F,F) +
+  labs(x = expression(paste(
+    E^{ox},
+    " Palladacycle (Fc/",
+    {Fc}^{"+"},
+    ", V)")),
        y = "HOMO Energy (Hartrees)") +
   themething +
   theme(legend.position = "none")
@@ -523,10 +529,12 @@ VIP_plot <- mk_desc_corr_plot(VIP_desc_df,
                               . %>%
                                 filter(
                                   L_type == "monodentate"),
-                              T,F) +
-  labs(x = expression(paste("Potential (V, Fc/", 
-                            {Fc^{"+"}} ,
-                            ")")),
+                              F,F) +
+  labs(x = expression(paste(
+    E^{ox},
+    " Palladacycle (Fc/",
+    {Fc}^{"+"},
+    ", V)")),
        y = "Vertical Ionization Potential (eV)") +
   themething +
   theme(legend.position = "none")
@@ -545,10 +553,12 @@ AIP_plot <- mk_desc_corr_plot(VIP_desc_df,
                               . %>%
                                 filter(
                                   L_type == "monodentate"),
-                              T,F) +
-  labs(x = expression(paste("Potential (V, Fc/", 
-                            {Fc^{"+"}} ,
-                            ")")),
+                              F,F) +
+  labs(x = expression(paste(
+    E^{ox},
+    " Palladacycle (Fc/",
+    {Fc}^{"+"},
+    ", V)")),
        y = "Adiabatic Ionization Potential (eV)") +
   themething +
   theme(legend.position = "none")
@@ -559,5 +569,5 @@ desc_E_corr_plot <- Mull_plot +
   VIP_plot +
   AIP_plot +
   plot_layout() &
-  theme(axis.title = element_text(size = rel(1)),
-        axis.text = element_text(size = rel(1)))
+  theme(axis.title = element_text(size = rel(0.9)),
+        axis.text = element_text(size = rel(0.9)))
