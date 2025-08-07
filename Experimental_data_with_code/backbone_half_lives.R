@@ -498,16 +498,16 @@ backbone_IR_plot <- simple_plot_mb_style(
 
 # Plot backbone vs values
 t_h_pred_plot_sum <- ggplot(data = t_half_pred_df_2,
-                            aes(x = 
-                                  log_half_life,
+                            aes(x = log_half_life,
                                 y = 
-                               log_t_half_pred_sum)) +
+                                  log_t_half_pred_sum)) +
   geom_abline(slope = 1,
               intercept = 0,
               color = "#4E525A",
               linewidth = 1) +
-  geom_point(size = rel(5),
-             color = "#AF0000") +
+  geom_point(size = 4,
+             fill = "#636C9D",
+             pch = 21) +
   geom_label_repel(data = filter(t_half_pred_df_2,
                                  Backbone %in% c(
                                    "CF3-NMs-NMe2",
@@ -517,7 +517,7 @@ t_h_pred_plot_sum <- ggplot(data = t_half_pred_df_2,
                    nudge_x = -1,
                    nudge_y = 0.6,
                    parse = T,
-                   size = rel(5)) +
+                   size = 4) +
   geom_label_repel(data = filter(t_half_pred_df_2,
                                  !(Backbone %in% c(
                                    "CF3-NMs-NMe2",
@@ -527,7 +527,7 @@ t_h_pred_plot_sum <- ggplot(data = t_half_pred_df_2,
                    nudge_x = 2,
                    nudge_y = -0.4,
                    parse = T,
-                   size = rel(5)) +
+                   size = 4) +
   labs(x = expression(paste(log[10](t[1/2]),
                             " at 25 \u00B0C")),
        y = expression(paste("Predicted ", 
@@ -535,9 +535,7 @@ t_h_pred_plot_sum <- ggplot(data = t_half_pred_df_2,
                             " at 25 \u00B0C"))) +
   xlim(0,9) +
   ylim(0,9) +
-  themething +
-  theme(axis.title = element_text(size = rel(1.75)),
-        axis.text = element_text(size = rel(1.75)))
+  themething
 
 #========================
 # Alternative descriptors
