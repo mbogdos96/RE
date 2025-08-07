@@ -179,10 +179,8 @@ eyring_plot_list <- eyring_plots(
 eyring_plots_rm_NMe2 <- eyring_plot_list[-3]
 
 # Wrap all eyring plots into one
-all_eyring_plots <- wrap_plots(eyring_plots_rm_NMe2) +
-  plot_layout(ncol = 3,
-              nrow = 2,
-              axis_titles = "collect") &
+all_eyring_plots <- wrap_plots(eyring_plot_list) +
+  plot_layout(axis_titles = "collect") &
   theme(axis.text = element_blank(),
         plot.title = element_text(size = 12),
         axis.title = element_text(size = 10))
