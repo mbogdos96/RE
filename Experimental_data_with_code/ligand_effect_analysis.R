@@ -28,11 +28,6 @@ dft_energies <- read.csv(file.path(
 # Caclculate the barriers from the DFT data
 # This df used to create DFT data table in SI
 barriers_df <- dft_energies %>%
-  dplyr::select(Ligand,
-                Backbone,
-                qh.G.T._SPC,
-                State,
-                L_type) %>%
   group_by(Ligand,
            Backbone) %>%
   mutate(Barrier_kcal_mol = 
@@ -42,7 +37,7 @@ barriers_df <- dft_energies %>%
 
 # Translate into logk_rt to use in modeling
 barriers_L <- barriers_df  %>%
-  filter(State == "TS",
+  filter(State == "TS" &
          Backbone == "F4-NClMs-OMe") %>%
   dplyr::select(Ligand,
                 Barrier_kcal_mol,
@@ -76,6 +71,9 @@ barriers_and_E_L <- merge(barriers_L,
     Ligand, 
     replace_ligand_expression_og))
 
+#====
+# EDA
+#====
 # EDA data
 EDA_df <- read.csv(file.path(
   "./EDA/EDA_rawvalues.csv"))
@@ -122,30 +120,48 @@ k_E_L_scaled <- barriers_and_E_L %>%
                           scale = T),
          L_type = as.factor(L_type))
 
-# Model of only electronics
-E_only_model <- lm(data = k_E_L_scaled, 
-                   logk_rt ~ E_scaled)
+# Import data and merge into dataset used for modeling
+kEL_scale_frac_CN <- read.csv(
+  "./complex_descriptors/fractional_CN.csv") %>%
+  merge(k_E_L_scaled) %>%
+  mutate(fr_CN_scaled = scale(Pd_fractional_CN,
+                              scale = T,
+                              center = T))
 
-# Model of only electronics and sterics
-E_Vbur_model <- lm(data = k_E_L_scaled,
-                   logk_rt ~ E_scaled + Vbur_scaled)
+# Create the three models
+E_only_model <- lm(data = kEL_scale_frac_CN, 
+              logk_rt ~ E_scaled)
 
-# Model where the categorical parameter 
-# of coord no is included
-E_Vbur_geom_model <- lm(data = k_E_L_scaled,
-                        logk_rt ~ E_scaled + 
-                          Vbur_scaled + L_type)
+E_Vbur_model <- lm(data = kEL_scale_frac_CN,
+               logk_rt ~ E_scaled 
+               + Vbur_scaled)
 
-# Akaike information criterion for models
-model_names <- c("E",
-                 "E and S",
-                 "E, S and CN")
+E_Vbur_geom_model <- lm(data = kEL_scale_frac_CN,
+                logk_rt ~ E_scaled + 
+                  Vbur_scaled + fr_CN_scaled)
+
+# Append metrics to output df
+frac_CN_comp_df <- data.frame(
+  model = c(1,2,3),
+  AICc = c(AICc(E_only_model),
+           AICc(E_Vbur_model),
+           AICc(E_Vbur_geom_model)),
+  BIC = c(BIC(E_only_model),
+          BIC(E_Vbur_model),
+          BIC(E_Vbur_geom_model)),
+  pA = c(anova(E_only_model,
+               E_Vbur_model)$`Pr(>F)`[[2]],
+         anova(E_Vbur_model,
+               E_Vbur_geom_model)$`Pr(>F)`[[2]],
+         anova(E_only_model,
+               E_Vbur_geom_model)$`Pr(>F)`[[2]]))
 
 # Create a list which contains the models
 rate_models <- list(E_only_model,
                     E_Vbur_model,
                     E_Vbur_geom_model)
 
+# Make a table summarising the stats of the models
 models_table_stats <- modelsummary(rate_models,
   title = 
     "Summary statistics for the Ancillary Ligand Models",
@@ -158,28 +174,6 @@ models_table_stats <- modelsummary(rate_models,
   statistic = NULL,
   gof_omit = "AIC|BIC|Log.Lik.",
   output = "latex")
-
-# Table comparing models w/AIC
-aic_compare_models <- aictab(cand.set = rate_models,
-                             modnames = model_names)
-
-# Table to comparing models w/BIC
-BIC_compare_models <- data.frame(
-  "Model" = c("1 (E)",
-              "2 (E & S)",
-              "3 (E, S & CN)"),
-  "BIC" = c(BIC(E_only_model),
-            BIC(E_Vbur_model),
-            BIC(E_Vbur_geom_model)))
-
-# Anova for models
-# Models 1 and 2
-anova_Vbur <- anova(E_only_model,
-                    E_Vbur_model)
-
-# Model 3
-anova_geom <- anova(E_Vbur_model,
-                    E_Vbur_geom_model)
 
 # EDA models
 lm_EDA_all <- lm(data = EDA_Vbur_df %>%
@@ -209,11 +203,11 @@ EDA_pred_df <- EDA_Vbur_df %>%
 # Create the dataframe with the predictions in the model
 logk_pred_df <- k_E_L_scaled %>%
   mutate(logk_pred_no_geom = predict(E_Vbur_model,
-                                     k_E_L_scaled),
+                                     kEL_scale_frac_CN),
          logk_pred_geom = predict(E_Vbur_geom_model,
-                                  k_E_L_scaled),
+                                  kEL_scale_frac_CN),
          logk_pred_e = predict(E_only_model,
-                               k_E_L_scaled),
+                               kEL_scale_frac_CN),
          Special_label_exp = sapply(
            Ligand, 
            replace_ligand_expression_og))
@@ -252,7 +246,8 @@ EDA_plot <- ggplot(data = EDA_Vbur_df,
                        y = sum_sterics_disp)) +
   geom_label_repel(aes(label = Special_label_exp),
                    parse = T,
-                   nudge_x = 1) +
+                   nudge_x = 1,
+                   nudge_y = 1) +
   geom_point(data = . %>%
                filter(L_type == "monodentate"),
              fill = "#636C9D",
@@ -352,7 +347,7 @@ mk_anc_L_pred_plot <- function(inp_df,
                              L_type == "monodentate"),
                aes(x = logk_rt,
                    y = {{pred_logk}}),
-               size = 5,
+               size = 4,
                fill = "#636C9D",
                pch = 21) +
     labs(
@@ -361,8 +356,8 @@ mk_anc_L_pred_plot <- function(inp_df,
       y = expression(paste("Predicted ", 
                            log[10](k),
                            " at 25 \u00B0C"))) +
-    xlim(-20,0) +
-    ylim(-20,0) +
+    xlim(-24,0) +
+    ylim(-24,0) +
     themething
   
   # Output the plot
@@ -395,12 +390,24 @@ pred_plot_all_logk <- pred_plot_mod1 +
         axis.title = element_text(size = rel(1.2)))
 
 # Make the plot with only the best model 
-# on it for the manuscript
-pred_plot_logk_ms <- ggplot() +
+# on it for the manuscript - figure 9
+pred_plot_logk_ms <- ggplot(data = NULL) +
   geom_abline(slope = 1,
               intercept = 0,
               color = "#4E525A",
               linewidth = 1) +
+  geom_abline(slope = 1,
+              intercept = -1,
+              color = "#4E525A",
+              linewidth = 0.5,
+              alpha = 0.5,
+              linetype = "dashed") +
+  geom_abline(slope = 1,
+              intercept = 1,
+              color = "#4E525A",
+              linewidth = 0.5,
+              alpha = 0.5,
+              linetype = "dashed") +
   geom_label_repel(data = filter(logk_pred_df,
             (logk_rt/logk_pred_no_geom) >= 1),
                    aes(x = logk_rt,
@@ -411,8 +418,7 @@ pred_plot_logk_ms <- ggplot() +
                    parse = T,
                    size = 4) +
   geom_label_repel(data = filter(logk_pred_df,
-                 (logk_rt/logk_pred_no_geom) < 1
-                                 & logk_rt > -11),
+                 (logk_rt/logk_pred_no_geom) < 1),
                    aes(x = logk_rt,
                        y = logk_pred_no_geom,
                        label = Special_label_exp),
@@ -420,27 +426,15 @@ pred_plot_logk_ms <- ggplot() +
                    nudge_y = -1,
                    parse = T, 
                    size = 4) +
-  geom_label_repel(data = filter(logk_pred_df,
-                                 Ligand == "Fdppe"),
-                   aes(x = logk_rt,
-                       y = logk_pred_no_geom,
-                  label = Special_label_exp),
-                   nudge_x = -0.5,
-                   nudge_y = -2,
-                   parse = T, 
-                   size = 4) +
-  geom_point(data = filter(logk_pred_df,
-                           L_type == "bidentate"),
+  geom_point(data = logk_pred_df,
              aes(x = logk_rt,
                  y = logk_pred_no_geom),
-             size = 5,
-             color = "#B71B1B") +
-  geom_point(data = filter(logk_pred_df,
-                           L_type == "monodentate"),
-             aes(x = logk_rt,
-                 y = logk_pred_no_geom),
-             size = 5,
-             color = "#636C9D") +
+             size = 4,
+             fill = if_else(
+               logk_pred_df$L_type == "bidentate",
+               "#B71B1B",
+               "#636C9D"),
+             pch = 21) +
   labs(x = expression(paste(log[10](k),
                             " at 25 \u00B0C")),
        y = expression(paste("Predicted ", 
@@ -448,6 +442,6 @@ pred_plot_logk_ms <- ggplot() +
                             " at 25 \u00B0C"))) +
   xlim(-20, 0) +
   ylim(-20,0) +
-  themething +
-  theme(axis.title = element_text(size = rel(1.5)),
-        axis.text = element_text(size = rel(1.5)))
+  themething 
+
+print(pred_plot_logk_ms)
