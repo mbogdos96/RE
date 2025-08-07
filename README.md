@@ -20,13 +20,14 @@ experimental_data_without_code directory contains:
   HRMS core facility reports
 
 experimental_data_with_code directory contains:
- Electrochemical data
+Electrochemical data
   - raw data in MBPdG10
   - code used for data processing 
     (CV_analysis.R, SW_analysis.R, FC_standard.R)
   - code used for plotting
     (CV_plots.R, SW_plots.R, Eox_descriptors.R)
- Kinetic data for palladacycle C-N reductive elimination
+
+Kinetic data for palladacycle C-N reductive elimination
   - raw data for different backbones in subdirectory half_life_data
   - raw data for different ancillary ligands on F4-NClMs-OMe backbone in subdirectory eyring
   - data analysis and plotting for different backbones
@@ -35,7 +36,8 @@ experimental_data_with_code directory contains:
     (eyring.R)
   - error analysis for the various kinetics 
     (kinetics_errors.R)
- Modeling
+
+Modeling
   - power analysis and seeds for reproducible simulations
     (generate_simulated_data.R, analyse_simulations.R, simulations_plots.R, seeds.txt)
   - simulations for the potential for endogenous error that scales with logk
@@ -44,11 +46,14 @@ experimental_data_with_code directory contains:
     (ligand_effect_analysis.R)
   - mediation analysis and path coefficients
     (mediation_analysis.R)
- DFT data
+
+DFT data
   - VIP, AIP, Vbur etc. in subdirectory complex_descriptors
   - extracted benchmarked barrier data for palladacycles in subdirectory barriers
- Literature data
+
+Literature data
   - data from the literature and DFT calculated values in subdirectory literature_data
   - energy decomposition analysis extracted data in subdirectory EDA
- Package information for the code
+
+Package information for the code
   - lock file renv.lock contains all package names and versions
