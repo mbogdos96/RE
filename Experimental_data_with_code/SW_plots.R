@@ -58,20 +58,22 @@ SW_plot_all <- plot_SW(all_SW)
 
 # Separate bidentate and monodentate ligands 
 # into two plots
-SW_L_type <- (plot_SW(all_SW %>%
-                        filter(L_type == "bidentate")) +
-                xlim(0.4,1.75) +
-                ylim(-5e-7,1e-5) +
-                theme(legend.position = "bottom") +
-                guides(color = guide_legend(nrow = 2))) + 
-  (plot_SW(all_SW %>%
-            filter(L_type == "monodentate")) +
-     xlim(0.5,1.75) +
-     ylim(-5e-7,1e-5) +
-  theme(legend.position = "bottom",
-        axis.ticks.y = element_blank(),
-        axis.text.y = element_blank()) +
-  guides(color = guide_legend(nrow = 2))) +
+SW_bid_plot <- plot_SW(all_SW %>%
+                          filter(L_type == "bidentate")) +
+  facet_wrap(~ Ligand) +
+  xlim(0.4,1.75) +
+  theme(legend.position = "bottom") +
+  guides(color = guide_legend(nrow = 2))
+
+SW_mono_plot <- plot_SW(all_SW %>%
+                         filter(L_type == "monodentate")) +
+  facet_wrap(~ Ligand) +
+  xlim(0,1.75) +
+  theme(legend.position = "bottom") +
+  guides(color = guide_legend(nrow = 2))
+
+SW_L_type <- SW_mono_plot + 
+  SW_bid_plot +
   plot_layout(axis_titles = "collect")
 
 # Plots of square wave extracted peaks
@@ -126,6 +128,7 @@ SW_free_L_mono <- plot_SW(all_free_L_SW %>%
                                              "PAd2Bu",
                                              "PMes3",
                                              "PtBu2Cy"))) +
+                facet_wrap(~ Ligand) +
                 xlim(0,1.6) +
                 ylim(-5e-7,1.5e-5) +
                 theme(legend.position = "bottom") +
@@ -141,12 +144,13 @@ SW_free_L_bid <- plot_SW(all_free_L_SW %>%
                                                  "PAd2Bu",
                                                  "PMes3",
                                                  "PtBu2Cy")))) +
+  facet_wrap(~ Ligand) +
   xlim(0,1.6) +
   ylim(-5e-7,1.5e-5) +
   theme(legend.position = "bottom") +
   guides(color = guide_legend(nrow = 2))
 
 # SW free L combined plots
-SW_free_L_plot <- SW_free_L_mono +
-  SW_free_L_bid +
+SW_free_L_plot <- SW_free_L_bid +
+  SW_free_L_mono +
   plot_layout(axes = "collect")
