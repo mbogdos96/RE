@@ -96,11 +96,13 @@ med_fn <- function(inp_df,
                     data = inp_df)
   } else {
     # Apply k pred lm()
-    lm_E_S_logk <- lm(logk_rt ~ E + Vbur + Nu_par + E_par, 
+    lm_E_S_logk <- lm(logk_rt ~ E + Vbur 
+                      + Nu_par + E_par, 
                       data = inp_df)
     
     # Apply mediation lm()
-    lm_CN_S_E <- lm(E ~ CN + Vbur + P_don + Nu_par + E_don, 
+    lm_CN_S_E <- lm(E ~ CN + Vbur + P_don 
+                    + Nu_par + E_don, 
                     data = inp_df)
   }
   
@@ -118,14 +120,16 @@ med_fn <- function(inp_df,
     filter(effect != "")
   
   # Define effects and operations
-  effects <- c("s^e_k", "s^cn_k", "s^tot", "s^tot_CN4")
+  effects <- c("s^e_k", "s^cn_k", 
+               "s^tot", "s^tot_CN4")
   operations <- list(
     s_e_k = function(e, 
                      s_i) e * s_i,
     s_cn_k = function(e, 
                       s_cn) e * s_cn,
     s_tot = function(e, s, 
-                     s_i, s_cn) (e * s_i) + (e * s_cn) + s,
+                     s_i, s_cn) 
+      (e * s_i) + (e * s_cn) + s,
     s_tot_CN4 = function(e, 
                          s, s_i) (e * s_i) + s
   )
@@ -330,8 +334,7 @@ est_plot_fn <- function(in_df,
   return(out_plot)
 }
 
-# Plot for ms Fig 3b - only scaled pdcy values relative to
-# e
+# Only scaled pdcy values relative to e
 est_sc_pdcy_rel_plot <- est_plot_fn(
   med_master_df,
   est_rel_e,
@@ -455,7 +458,7 @@ est_both_plot <- est_plot_fn(
   c("Y"),
   c("Lit",
     "PdCy"),
-  "Estimate",
+  "Estimate relative to e",
   sample) +
   theme(legend.position = "bottom") +
   labs(fill = "Dataset",
@@ -519,3 +522,246 @@ E ~ Vbur + CN + P_don + Nu_par + E_don
 # Use SEM on lit data
 sem_full_lit <- sem(DAG_structure_full,
                     data = lit_scaled_df)
+
+#==========================================
+# Reviewer 2 fractional coordination number
+#==========================================
+# Function for applying models and extracting 
+# path coefficients
+med_fn_frCN <- function(inp_df, 
+                   app_mod) {
+  
+  # Apply the linear models based on app_mod
+  if (app_mod == "partial") {
+    # Apply k pred lm()
+    lm_E_S_logk <- lm(logk_rt ~ E + Vbur, 
+                      data = inp_df)
+    
+    # Apply mediation lm()
+    lm_CN_S_E <- lm(E ~ CN + Vbur + P_don, 
+                    data = inp_df)
+  } else {
+    # Apply k pred lm()
+    lm_E_S_logk <- lm(logk_rt ~ E + Vbur 
+                      + Nu_par + E_par, 
+                      data = inp_df)
+    
+    # Apply mediation lm()
+    lm_CN_S_E <- lm(E ~ CN + Vbur + P_don 
+                    + Nu_par + E_don, 
+                    data = inp_df)
+  }
+  
+  # Construct data frame with estimates and errors
+  est_df <- data.frame(summary(lm_E_S_logk)$coefficients) %>%
+    head(3) %>%
+    rbind(data.frame(summary(lm_CN_S_E)$coefficients) %>%
+            head(4)) %>%
+    rename(Std_error = "Std..Error") %>%
+    dplyr::select(c(Estimate, Std_error)) %>%
+    mutate(Est_upr = Estimate + Std_error,
+           Est_lwr = Estimate - Std_error,
+           effect = c("", "e", "s", "", 
+                      "s^cn", "s^i", "d")) %>%
+    filter(effect != "")
+  
+  # Define effects and operations
+  effects <- c("s^e_k", "s^cn_k", 
+               "s^tot", "s^tot_CN4")
+  operations <- list(
+    s_e_k = function(e, 
+                     s_i) e * s_i,
+    s_cn_k = function(e, 
+                      s_cn) e * s_cn,
+    s_tot = function(e, s, 
+                     s_i, s_cn) 
+      (e * s_i) - (e * s_cn) + s,
+    s_tot_CN4 = function(e, 
+                         s, s_i) (e * s_i) + s
+  )
+  
+  # Standard error propagation functions for each effect
+  error_propagation <- list(
+    s_e_k = function(
+    e, s_i, 
+    se_e, 
+    se_s_i) sqrt((s_i * se_e)^2 + (e * se_s_i)^2),
+    s_cn_k = function(
+    e, s_cn, 
+    se_e, se_s_cn) sqrt((s_cn * se_e)^2 + (e * se_s_cn)^2),
+    s_tot = function(
+    e, s, s_i, s_cn, 
+    se_e, se_s, 
+    se_s_i, 
+    se_s_cn) 
+      sqrt((s_i * se_e)^2 + (e * se_s_i)^2 + (s_cn * se_e)^2 + (e * se_s_cn)^2 + se_s^2),
+    s_tot_CN4 = function(e, s, s_i, 
+                         se_e, se_s, se_s_i) 
+      sqrt((s_i * se_e)^2 + (e * se_s_i)^2 + se_s^2)
+  )
+  
+  # Initialize lists for new rows and standard errors
+  new_rows <- list()
+  new_errors <- list()
+  
+  # Loop over Estimate to compute values for each effect
+  for (col in c("Estimate", "Std_error")) {
+    e <- est_df[est_df$effect == "e", "Estimate"]
+    s <- est_df[est_df$effect == "s", "Estimate"]
+    s_i <- est_df[est_df$effect == "s^i", "Estimate"]
+    s_cn <- est_df[est_df$effect == "s^cn", "Estimate"]
+    
+    se_e <- est_df[est_df$effect == "e", "Std_error"]
+    se_s <- est_df[est_df$effect == "s", "Std_error"]
+    se_s_i <- est_df[est_df$effect == "s^i", "Std_error"]
+    se_s_cn <- est_df[est_df$effect == "s^cn", "Std_error"]
+    
+    # Calculate new values for each effect based on Estimate
+    if (col == "Estimate") {
+      new_vals <- c(
+        operations$s_e_k(e, s_i),
+        operations$s_cn_k(e, s_cn),
+        operations$s_tot(e, s, s_i, s_cn),
+        operations$s_tot_CN4(e, s, s_i)
+      )
+      new_rows[[col]] <- new_vals
+    }
+    
+    # Calculate propagated standard errors based on Std_error
+    if (col == "Std_error") {
+      new_se_vals <- c(
+        error_propagation$s_e_k(
+          e, s_i, se_e, se_s_i),
+        error_propagation$s_cn_k(
+          e, s_cn, se_e, se_s_cn),
+        error_propagation$s_tot(
+          e, s, s_i, s_cn, se_e, se_s, se_s_i, se_s_cn),
+        error_propagation$s_tot_CN4(
+          e, s, s_i, se_e, se_s, se_s_i)
+      )
+      new_errors[[col]] <- new_se_vals
+    }
+  }
+  
+  # Create the new rows data frame
+  full_est_df <- data.frame(
+    Estimate = new_rows$Estimate,
+    Std_error = new_errors$Std_error,
+    Est_upr = new_rows$Estimate + new_errors$Std_error,
+    Est_lwr = new_rows$Estimate - new_errors$Std_error,
+    effect = effects
+  )
+  
+  # Combine the data frames
+  all_est_df <- rbind(est_df, 
+                      full_est_df) %>%
+    mutate(type_effect = ifelse(effect %in% c(
+      "e", "s^tot", "s^tot_CN4"),
+      "Total Effects",
+      ifelse(effect %in% c("s^cn_k", "s^e_k", "s"),
+             "Effects on Rate",
+             "Indirect Effects")))
+  
+  # Return the final data frame with estimates
+  return(all_est_df)
+}
+
+# Merge the data for scaled data
+med_fr_CN <- read.csv(
+  "./complex_descriptors/fractional_CN.csv") %>%
+  merge(pdcy_df_scaled) %>%
+  mutate(CN = scale(Pd_fractional_CN,
+                                  scale = T,
+                                  center = T))
+
+# Define the DAG
+DAG_fr_CN <- '
+# Direct effects on rate
+logk_rt ~ E + Vbur
+
+# Effect on E
+E ~ Vbur + CN + P_don
+'
+
+# Use SEM on limited DAG
+sem_fr_CN <- sem(DAG_fr_CN,
+                 data = med_fr_CN)
+
+# Merge the data for raw data
+med_fr_CN_raw <- read.csv(
+  "./complex_descriptors/fractional_CN.csv") %>%
+  merge(pdcy_df_raw) %>%
+  mutate(CN = Pd_fractional_CN)
+
+# Use mediation function on fractional coordination 
+# number data
+med_est_frac_CN <- med_fn_frCN(med_fr_CN,
+                          "partial") %>%
+  mutate(scaling = "Y") %>%
+  rbind(med_fn_frCN(med_fr_CN_raw,
+               "partial") %>%
+          mutate(scaling = "N")) %>%
+  filter(effect != "d") %>%
+  group_by(scaling) %>%
+  mutate(est_rel_e = Estimate/Estimate[effect == "e"],
+         est_upr_rel_e = Est_upr/Estimate[effect == "e"],
+         est_lwr_rel_e = Est_lwr/Estimate[effect == "e"],
+         sample = "PdCy")
+
+# Plot scaled vs not scaled path coefs rel to e
+est_frac_CN_plot <- est_plot_fn(
+  med_est_frac_CN %>%
+    mutate(scaling = as.factor(scaling),
+           scaling = relevel(scaling,
+                             ref = "Y")),
+  est_rel_e,
+  est_upr_rel_e,
+  est_lwr_rel_e,
+  c("Y","N"),
+  c("PdCy"),
+  "Estimate Relative to e",
+  scaling) +
+  theme(legend.position = "bottom") +
+  labs(fill = "Data scaling",
+       color = "Data scaling")
+
+# Absolute numbers for fractional coordination number
+est_raw_v_sc_pdcy_plot_frCN <- est_plot_fn(
+  med_est_frac_CN %>%
+    mutate(scaling = as.factor(scaling),
+           scaling = relevel(scaling,
+                             ref = "Y")),
+  Estimate,
+  Est_upr,
+  Est_lwr,
+  c("Y","N"),
+  c("PdCy"),
+  "Estimate",
+  scaling) +
+  theme(legend.position = "bottom") +
+  labs(fill = "Data scaling",
+       color = "Data scaling")
+
+# Fractional CN combined plot
+frCN_comb_plot <- est_frac_CN_plot +
+  est_raw_v_sc_pdcy_plot_frCN
+
+#==============
+# MS and Review
+#==============
+# Scaled only for Fig 10
+est_frac_CN_plot_scaled <- est_plot_fn(
+  med_est_frac_CN %>%
+    filter(scaling == "Y"),
+  est_rel_e,
+  est_upr_rel_e,
+  est_lwr_rel_e,
+  c("Y"),
+  c("PdCy"),
+  "Estimate Relative to e",
+  scaling)
+
+# Combine the plots for scaled relative estimates
+# for categorical and continuous CN
+rev2_plots_estimates <- est_sc_pdcy_rel_plot +
+  est_frac_CN_plot_scaled
