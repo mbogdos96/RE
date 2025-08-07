@@ -38,6 +38,8 @@ analyse_simulations <- function(df) {
            ANOVA_p_val_sel = case_when(
              all(ANOVA_log10p > log10(0.05)) ~ "1",
              all(ANOVA_log10p < log10(0.05)) ~ "3",
+             ANOVA_log10p[1] > log10(0.05) 
+             & all(ANOVA_log10p[2:3] < log10(0.05)) ~ "3",
              TRUE ~ "2")) %>%
     dplyr::select(N_Obs,
                   Ground_Truth_Model,
@@ -135,17 +137,23 @@ analyse_ANOVA <- function(df) {
              SD_Noise,
              Sim_no) %>%
     mutate(ANOVA_std_sig = case_when(
-             all(ANOVA_log10p > log10(0.05)) ~ 1,
-             all(ANOVA_log10p < log10(0.05)) ~ 3,
-             TRUE ~ 2),
+      all(ANOVA_log10p > log10(0.05)) ~ "1",
+      all(ANOVA_log10p < log10(0.05)) ~ "3",
+      ANOVA_log10p[1] > log10(0.05) 
+      & all(ANOVA_log10p[2:3] < log10(0.05)) ~ "3",
+      TRUE ~ "2"),
            ANOVA_high_sig = case_when(
-             all(ANOVA_log10p > log10(0.1)) ~ 1,
-             all(ANOVA_log10p < log10(0.1)) ~ 3,
-             TRUE ~ 2),
+             all(ANOVA_log10p > log10(0.1)) ~ "1",
+             all(ANOVA_log10p < log10(0.1)) ~ "3",
+             ANOVA_log10p[1] > log10(0.1) 
+             & all(ANOVA_log10p[2:3] < log10(0.1)) ~ "3",
+             TRUE ~ "2"),
            ANOVA_low_sig = case_when(
-             all(ANOVA_log10p > log10(0.001)) ~ 1,
-             all(ANOVA_log10p < log10(0.001)) ~ 3,
-             TRUE ~ 2)) %>%
+             all(ANOVA_log10p > log10(0.001)) ~ "1",
+             all(ANOVA_log10p < log10(0.001)) ~ "3",
+             ANOVA_log10p[1] > log10(0.001) 
+             & all(ANOVA_log10p[2:3] < log10(0.001)) ~ "3",
+             TRUE ~ "2")) %>%
     dplyr::select(N_Obs,
                   Ground_Truth_Model,
                   SD_Noise,
@@ -406,16 +414,14 @@ metrics_agree_model <- function(df,
 
 # Apply so that all non redundant metrics agree
 con_prob_1 <- metrics_agree_model(
-  non_red_metrics_analysed,
-                                      1) %>%
+  non_red_metrics_analysed,1) %>%
   ungroup() %>%
   mutate(no_par_left_out = 0)
 
-# Apply so that all but one non redundanant 
+# Apply so that all but one non redundant 
 # metrics agree
 con_prob_2 <- metrics_agree_model(
-  non_red_metrics_analysed,
-                                  2) %>%
+  non_red_metrics_analysed,2) %>%
   ungroup() %>%
   mutate(no_par_left_out = 1)
 
@@ -425,7 +431,8 @@ consensus_prob <- rbind(con_prob_1,
 
 # Filter for the n that you actually have for the study
 prob_corr_final <- consensus_prob %>%
-  filter(N_Obs == 9 & no_par_left_out == 1) %>%
+  filter(N_Obs == 10 
+         & no_par_left_out == 1) %>%
   dplyr::select(-n,
                 -n_corr,
                 -no_par_left_out) %>%
@@ -461,4 +468,110 @@ delta_AICc_data_less <- delta_AICc_data %>%
 
 delta_AICc_data_N <- delta_AICc_data_less %>%
   ungroup() %>%
-  filter(N_Obs == 9)
+  filter(N_Obs == 10) %>%
+  group_by(N_Obs, SD_Noise, 
+           Ground_Truth_Model) %>%
+  summarise(
+    prob_is_corr = mean(is_corr),
+    n_total = n(),
+    .groups = "drop"
+  ) %>%
+  mutate(prob_AICc_small = n_total/250)
+
+#===================
+# Reviewer 1 section
+#===================
+# Analyse the data generated using the ranges that R1
+# requested
+analysed_simulations_r1 <- analyse_simulations(
+  sim_results_r1)
+
+non_red_metrics_analysed_r1 <- analysed_simulations_r1 %>%
+  dplyr::select(N_Obs,
+                Ground_Truth_Model,
+                SD_Noise,
+                Sim_no,
+                AICc_min,
+                BIC_min,
+                ANOVA_p_val_sel)
+
+non_red_prob_r1 <- leave_how_many_out(
+  non_red_metrics_analysed_r1,
+  c(1,2),
+  500)
+
+con_prob_2_r1 <- metrics_agree_model(
+  non_red_metrics_analysed_r1,
+  2)
+
+#============================
+# Fractional CN sims analysis
+#============================
+# Apply the analysis functions
+# Analyse fr CN sims w/og function
+analysed_simulations_frCN <- analyse_simulations(
+  sim_r_frCN)
+
+# Run the truth finding function on
+# frCN the simulated data
+binary_truth_df_frCN <- calculate_individual_metric_truth(
+  analysed_simulations_frCN)
+
+# Probabilities on frCN data
+prob_ind_metric_frCN <- calc_probabilities_individual_metrics(
+  binary_truth_df_frCN)
+
+# Calculate probability of agreement frCN
+agreement_prob_frCN <- leave_how_many_out(
+  analysed_simulations_frCN,
+  range_of_metrics,
+  100)
+
+# Filter the data so that only 
+# AICc, BIC and ANOVA remain
+non_red_metrics_analysed_frCN <- analysed_simulations_frCN %>%
+  dplyr::select(N_Obs,
+                Ground_Truth_Model,
+                SD_Noise,
+                Sim_no,
+                AICc_min,
+                BIC_min,
+                ANOVA_p_val_sel)
+
+# Calculate probabilities for non redundant metrics
+non_red_prob_frCN <- leave_how_many_out(
+  non_red_metrics_analysed_frCN,
+  c(1,2),
+  250)
+
+# Apply so that all non redundant metrics agree
+con_prob_1_frCN <- metrics_agree_model(
+  non_red_metrics_analysed_frCN,1) %>%
+  ungroup() %>%
+  mutate(no_par_left_out = 0)
+
+# Apply so that all but one non redundant 
+# metrics agree
+con_prob_2_frCN <- metrics_agree_model(
+  non_red_metrics_analysed_frCN,2) %>%
+  ungroup() %>%
+  mutate(no_par_left_out = 1)
+
+# Combine the dfs
+consensus_prob_frCN <- rbind(con_prob_1_frCN,
+                        con_prob_2_frCN)
+
+# Filter for the n that you actually have for the study
+prob_corr_final_frCN <- consensus_prob_frCN %>%
+  filter(N_Obs == 10 
+         & no_par_left_out == 1) %>%
+  dplyr::select(-n,
+                -n_corr,
+                -no_par_left_out) %>%
+  arrange(metric_consensus) %>%
+  ungroup() %>%
+  rename("Sample Size" = N_Obs,
+         "Noise Level" = SD_Noise,
+         "Selected Model" = metric_consensus,
+         "Probability of Matching Ground Truth" = 
+           prob_correct)
