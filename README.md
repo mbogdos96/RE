@@ -9,11 +9,20 @@ by
 Michael K. Bogdos, Sven Roediger, Florian Ruepp, Nathalie A. V. Rowlinson, Patrick Müller, Fabio Masero, Jan Hübscher, Bill Morandi
 
 DFT directory contains:
-  - Energy_decomposition_analysis: DFT output files for energy decomposition analysis. Nomenclature: L_state.out; L - ancillary ligand on F4-NClMs-OMe-L palladacycle. state - ground state (gs) or transition state (ts).
-  - Lit_complexes: xyz files for the complexes and fragments used for parametrization of the literature dataset.
-  - Ni_complexes_monodentate_phosphines: xyz, output and Hessian files for the LNi(CO)3 complexes used for calculating Tolman parameters.
-  - Palladacycles: xyz and log files for ground states and transition states of the palladcycle reductive elimination. Nomenclature: (state)_(L).out; (L) - ancillary ligand on F4-NClMs-OMe-L palladacycle. (state) - ground state (gs) or transition state (ts).
-  - Rh_complexes_bidentate_phosphines: xyz, output and Hessian files for the LNi(CO)3 complexes used for calculating CO stretching frequency of Rh(H)(CO)L complexes.
+  Energy_decomposition_analysis: 
+  - DFT output files for energy decomposition analysis. Nomenclature: L_state.out; L - ancillary ligand on F4-NClMs-OMe-L palladacycle. state - ground state (gs) or transition state (ts).
+  
+  Lit_complexes: 
+  - xyz files for the complexes and fragments used for parametrization of the literature dataset.
+
+  Ni_complexes_monodentate_phosphines:
+  - xyz, output and Hessian files for the LNi(CO)3 complexes used for calculating Tolman parameters.
+  
+  Palladacycles: 
+  - xyz and log files for ground states and transition states of the palladcycle reductive elimination. Nomenclature: (state)_(L).out; (L) - ancillary ligand on F4-NClMs-OMe-L palladacycle. (state) - ground state (gs) or transition state (ts).
+
+  Rh_complexes_bidentate_phosphines: 
+  - xyz, output and Hessian files for the LNi(CO)3 complexes used for calculating CO stretching frequency of Rh(H)(CO)L complexes.
 
 experimental_data_without_code directory contains:
   NMR and IR raw data
