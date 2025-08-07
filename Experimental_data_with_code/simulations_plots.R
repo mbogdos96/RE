@@ -303,3 +303,9 @@ consensus_make_plot <- function(df) {
 
 consensus_probability_plot <- consensus_make_plot(
   consensus_prob)
+
+# Fractional cn plot Figure 8 of manuscript
+frCN_plot <- consensus_make_plot(
+  consensus_prob_frCN)
+
+print(frCN_plot)
