@@ -161,24 +161,8 @@ VIP_desc_df <- read.csv(file.path(
 #===================
 # Free L descriptors
 #===================
-# Fig 2 plot for DFT TEP Ni or Rh vs Eox
+# Figure 4 plot for DFT TEP Ni or Rh vs Eox
 E_v_TEP_Ni_Rh <- ggplot() +
-  geom_ribbon(data = data.frame("Potential" = c(0.65, 
-                                                1.4),
-                                "Upper" = c(18, 
-                                            37),
-                                "Lower" = c(0, 
-                                            19)),
-              aes(x = Potential,
-                  ymax = Upper,
-                  ymin = Lower),
-              alpha = 0.1) +
-  annotate(geom = "text",
-           x = 0.85,
-           y = 30,
-           label = "Expected Relationship",
-           alpha = 0.3,
-           size = 6) +
   geom_label_repel(data = filter(Ni_Rh_TEP_E,
                   !is.na(rel_Ni_CO_stretch)),
                    aes(x = Potential,
@@ -187,7 +171,7 @@ E_v_TEP_Ni_Rh <- ggplot() +
                    nudge_x = 0.01,
                    nudge_y = 3,
                    parse = TRUE,
-                   size = 5) +
+                   size = 4) +
   geom_label_repel(data = filter(Ni_Rh_TEP_E,
                                  !is.na(Rh_CO_stretch)),
                    aes(x = Potential,
@@ -196,20 +180,20 @@ E_v_TEP_Ni_Rh <- ggplot() +
                    nudge_x = 0.05,
                    nudge_y = -2,
                    parse = TRUE,
-                   size = 5) +
+                   size = 4) +
   geom_point(data = filter(Ni_Rh_TEP_E,
                            !is.na(rel_Rh_CO_stretch)),
              aes(x = Potential,
                  y = rel_Rh_CO_stretch),
              fill = "#B71B1B",
-             size = 5,
+             size = 4,
              pch = 21) +
   geom_point(data = filter(Ni_Rh_TEP_E,
                            !is.na(rel_Ni_CO_stretch)),
              aes(x = Potential,
                  y = rel_Ni_CO_stretch),
              fill = "#636C9D",
-             size = 5,
+             size = 4,
              pch = 21) +
   labs(x = expression(paste("Palladacycle ", 
                             E^{ox} ," vs. Fc/", 
@@ -226,9 +210,7 @@ E_v_TEP_Ni_Rh <- ggplot() +
   theme(axis.title.y.right = element_text(
     color = "#636C9D"),
         axis.title.y.left = element_text(
-          color = "#B71B1B"),
-        axis.title = element_text(size = rel(1.75)),
-        axis.text = element_text(size = rel(1.75)))
+          color = "#B71B1B"))
 
 # Plot comparing DFT vs ML TEP
 TEP_DFT_ML_plot <- ggplot(data = CO_stretch_method_df) +
@@ -355,7 +337,7 @@ mk_desc_corr_plot <- function(inp_df,
   # Add other features of the plot
   out_plot <- out_plot +
     geom_point(aes(fill = L_type),
-               size = 3,
+               size = 4,
                pch = 21) +
     scale_fill_manual(values = c("#B71B1B",
                                   "#636C9D")) +
@@ -396,18 +378,20 @@ plot_Eox_CO_free_L <- ggplot(data = CO_EOx_free_L_df,
   geom_label_repel(aes(y = rel_Rh_CO_stretch,
                        label = Special_label_exp),
                    nudge_y = 10,
-                   parse = T) +
+                   parse = T,
+                   size = 4) +
   geom_label_repel(aes(y = rel_Ni_CO_stretch,
                        label = Special_label_exp),
                    nudge_y = -10,
-                   parse = T) +
+                   parse = T,
+                   size = 4) +
   geom_point(aes(y = rel_Rh_CO_stretch,
                  fill = L_type),
-             size = 3,
+             size = 4,
              pch = 21) +
   geom_point(aes(y = rel_Ni_CO_stretch,
                  fill = L_type),
-             size = 3,
+             size = 4,
              pch = 21) +
   scale_fill_manual(values = c("#B71B1B",
                                 "#636C9D")) +
@@ -435,34 +419,75 @@ plot_Eox_CO_free_L <- ggplot(data = CO_EOx_free_L_df,
   themething +
   theme(legend.position = "none")
 
-# Combined plot for Ext Dat Fig 2
+# Combined plot for Figure 5
 E_ox_no_corr_plot <- plot_Eox_CO_free_L +
   free_L_complex_E_plot +
   plot_layout(nrow = 1,
               ncol = 2,
               axes = "collect")
 
-# Correlation between free L HOMO and 
+# Correlation between free L HOMO and free L Eox
 HOMO_Eox_free_L_plot <- mk_desc_corr_plot(
   all_free_L_descr,
-  Potential_free_L,
   HOMO_free_L_hartrees,
-  -0.05,
+  Potential_free_L,
   -0.003,
-  0.075,
+  -0.1,
   0.01,
+  0.1,
   . %>%
     filter(
       L_type == "bidentate"),
   . %>%
     filter(
       L_type == "monodentate"),
-  T,F) +
+  F,F) +
   theme(legend.position = "none") +
-  labs(x = expression(paste("Free L Potential (V, Fc/", 
+  labs(y = expression(paste("Free L Potential (V, Fc/", 
                             {Fc^{"+"}} ,
                             ")")),
-       y = "Free L HOMO Energy (Hartrees)")
+       x = "Free L HOMO Energy (Hartrees)")
+
+# Correlation between v(CO) and free L HOMO
+plot_HOMO_CO <- ggplot(data = all_free_L_descr,
+                             aes(x = HOMO_free_L_hartrees)) +
+  geom_label_repel(aes(y = rel_Rh_CO_stretch,
+                       label = Special_label_exp),
+                   nudge_y = -5,
+                   nudge_x = -0.005,
+                   parse = T) +
+  geom_label_repel(aes(y = rel_Ni_CO_stretch,
+                       label = Special_label_exp),
+                   nudge_y = 10,
+                   nudge_x = 0.005,
+                   parse = T) +
+  geom_point(aes(y = rel_Rh_CO_stretch,
+                 fill = L_type),
+             size = 3,
+             pch = 21) +
+  geom_point(aes(y = rel_Ni_CO_stretch,
+                 fill = L_type),
+             size = 3,
+             pch = 21) +
+  scale_fill_manual(values = c("#B71B1B",
+                               "#636C9D")) +
+  labs(x = "Free L HOMO Energy (Hartrees)",
+  y = expression(paste("Rh(I) ", 
+                       {v}[CO], " (rel., ",
+                       "DFT, ", {cm}^{-1}, ")")),
+  color = "Ligand Denticity") +
+  scale_y_continuous(sec.axis = sec_axis(~., 
+                                         name = expression(
+                                           paste(
+                                             "Ni(0) ", {v}[CO], " (rel.",
+                                             ", DFT, ", {cm}^{-1}, ")")))) +
+  themething +
+  theme(legend.position = "none")
+
+# R1 HOMO plot
+r1_homo_plot <- plot_HOMO_CO +
+  HOMO_Eox_free_L_plot +
+  plot_layout(axes = "collect")
 
 #========================
 # Palldacycle descriptors
@@ -563,7 +588,7 @@ AIP_plot <- mk_desc_corr_plot(VIP_desc_df,
   themething +
   theme(legend.position = "none")
 
-# Extended data figure 4
+# Figure 12
 desc_E_corr_plot <- Mull_plot +
   HOMO_plot + 
   VIP_plot +
