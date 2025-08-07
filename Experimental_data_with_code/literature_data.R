@@ -2,6 +2,8 @@ library(dplyr)
 library(ggplot2)
 library(ggrepel)
 library(caret)
+library(AICcmodavg)
+library(patchwork)
 
 #============
 # Import data
@@ -302,7 +304,9 @@ residuals_lit_model <- ggplot(data =
                               aes(x = 
                                     comb_mod_lit.residuals)) +
   geom_histogram(binwidth = 1) +
-  theme_classic()
+  labs(y = "Count",
+       x = "Literature Model Residual") +
+  themething
 
 # Mixed/random effects models for ligand
 library(lme4)
@@ -371,3 +375,199 @@ per_L_pred_plot <- lit_pred_plot(lit_dat_L_groups_pred %>%
               3) +
   scale_alpha(range = c(0.25,1),
               limits = c(-6.5,0))
+
+#=======================================
+# Reviewer 2 - Model comparison lit data
+#=======================================
+# Create the models
+lit_E <- lm(data = subsample_lit_df,
+            logk_rt ~ Soln_VIP_scaled
+            + Nu_scaled + Electr_scaled)
+
+lit_ES <- lm(data = subsample_lit_df,
+            logk_rt ~ Soln_VIP_scaled 
+            + Vbur_scaled 
+            + Nu_scaled + Electr_scaled)
+
+lit_ESCN <- lm(data = subsample_lit_df,
+            logk_rt ~ Soln_VIP_scaled 
+            + Vbur_scaled + Coord_no
+            + Nu_scaled + Electr_scaled)
+
+# Get the values for model selection
+lit_mod_sel <- data.frame(
+  model = c(1,2,3),
+  BIC = c(BIC(lit_E),
+          BIC(lit_ES),
+          BIC(lit_ESCN)),
+  AICc = c(AICc(lit_E),
+           AICc(lit_ES),
+           AICc(lit_ESCN)),
+  pA = c(anova(lit_E,lit_ES)$`Pr(>F)`[[2]],
+         anova(lit_ES,lit_ESCN)$`Pr(>F)`[[2]],
+         anova(lit_E,lit_ESCN)$`Pr(>F)`[[2]])) %>%
+  mutate(BIC_score = rank(-BIC),
+         AICc_score = rank(-AICc),
+         pA_score = c(1,3,2),
+         model_sel_score = BIC_score 
+         + AICc_score 
+         + pA_score)
+
+#============================
+# Reviewer 2 VIP correlations
+#============================
+# Import Mulliken charge data and merge
+lit_charge_data <- read.csv(
+  "./literature_data/mulliken_charges_lit.csv") %>%
+  mutate(ID = as.numeric(ID)) %>%
+  left_join(subsample_lit_df,
+            by = "ID")
+
+# Plots for correlations
+# HOMO and VIP
+VIP_HOMO_lit_plot <- ggplot(data = NULL,
+                            aes(x = Soln_VIP_eV,
+                                y = Soln_E_HOMO)) +
+  geom_smooth(data = lit_charge_data,
+              method = "lm",
+              color = "black") +
+  geom_point(data = lit_charge_data %>%
+               filter(Coord_no == 4),
+             fill = "#B71B1B",
+             size = 3,
+             pch = 21) +
+  geom_point(data = lit_charge_data %>%
+               filter(Coord_no == 3),
+             fill = "#636C9D",
+             size = 3,
+             pch = 21) +
+  labs(x = "VIP in Solution (eV)",
+       y = "HOMO Energy in Solution (Hartrees)") +
+  themething
+
+# Mulliken charges
+VIP_mulliken_lit <- ggplot(data = NULL,
+                           aes(x = Soln_VIP_eV,
+                               y = SPVIP_Charge_Block1)) +
+  geom_smooth(data = lit_charge_data,
+              method = "lm",
+              color = "black") +
+  geom_point(data = lit_charge_data %>%
+               filter(Coord_no == 4),
+             fill = "#B71B1B",
+             size = 3,
+             pch = 21) +
+  geom_point(data = lit_charge_data %>%
+               filter(Coord_no == 3),
+             fill = "#636C9D",
+             size = 3,
+             pch = 21) +
+  labs(x = "VIP in Solution (eV)",
+       y = "Mulliken Charge") +
+  themething
+
+# Combine the plots
+VIP_corr_plots <- VIP_mulliken_lit +
+  VIP_HOMO_lit_plot +
+  plot_layout(axes = "collect")
+
+print(VIP_corr_plots)
+
+# VIP/HOMO relationship
+VIP_HOMO_lm <- lm(data = lit_charge_data,
+                  Soln_E_HOMO ~ Soln_VIP_eV)
+
+# Extract the residuals
+lit_res_df <- lit_charge_data %>%
+  na.omit() %>%
+  mutate(HOMO_VIP_residuals = VIP_HOMO_lm$residuals)
+
+# Plot the residuals vs VIP
+HOMO_VIP_res_plot <- ggplot(data = NULL,
+                            aes(x = Soln_VIP_eV,
+                                y = 
+                                  HOMO_VIP_residuals)) +
+  geom_abline(intercept = 0,
+              slope = 0) +
+  geom_point(data = lit_res_df %>%
+               filter(Coord_no == 4),
+             fill = "#B71B1B",
+             size = 3,
+             pch = 21) +
+  geom_point(data = lit_res_df %>%
+               filter(Coord_no == 3),
+             fill = "#636C9D",
+             size = 3,
+             pch = 21) +
+  labs(x = "VIP in Solution (eV)",
+       y = "Residual with HOMO") +
+  themething
+
+# Histogram of residuals
+HOMO_VIP_res_hist <- ggplot(data = lit_res_df) +
+  geom_histogram(aes(x = HOMO_VIP_residuals),
+                 binwidth = 0.001) +
+  labs(y = "Count",
+       x = "HOMO/VIP Residual") +
+  themething
+
+# Combine residual plots
+res_plots <- HOMO_VIP_res_hist +
+  HOMO_VIP_res_plot
+
+# Look for outliers
+outlier_lit_res_df <- lit_res_df %>%
+  merge(subsample_lit_df %>%
+              mutate(
+    model_cd  = cooks.distance(comb_mod_lit_scaled),
+    model_mean_cd = mean(model_cd))) %>%
+  mutate(HOMO_VIP_cd = cooks.distance(VIP_HOMO_lm),
+         HOMO_VIP_mean_cd = mean(HOMO_VIP_cd))
+
+# Plot the two cook's distances
+cd_plot <- ggplot(data = NULL,
+                  aes(y = HOMO_VIP_cd,
+                      x = model_cd)) +
+  geom_point(data = outlier_lit_res_df %>%
+               filter(Coord_no == 4),
+             fill = "#B71B1B",
+             size = 3,
+             pch = 21) +
+  geom_point(data = outlier_lit_res_df %>%
+               filter(Coord_no == 3),
+             fill = "#636C9D",
+             size = 3,
+             pch = 21) +
+  labs(x = "Model Cook's Distance",
+       y = "VIP/HOMO Cook's Distance") +
+  themething
+
+# Model residuals
+res_lit_sample_df <- subsample_lit_df %>%
+  mutate(model_residuals = 
+           comb_mod_lit_scaled$residuals)
+
+# Plot model residuals vs log10k
+res_logk_plot <- ggplot(data = NULL,
+                  aes(y = model_residuals,
+                      x = logk_rt)) +
+  geom_abline(intercept = 0,
+              slope = 0) +
+  geom_point(data = res_lit_sample_df %>%
+               filter(Coord_no == 4),
+             fill = "#B71B1B",
+             size = 3,
+             pch = 21) +
+  geom_point(data = res_lit_sample_df %>%
+               filter(Coord_no == 3),
+             fill = "#636C9D",
+             size = 3,
+             pch = 21) +
+  labs(x = expression(paste("Measured ",
+                            log[10](k),
+                            " at 25 \u00B0C")),
+       y = "Literature Model Residual") +
+  themething
+
+model_residuals_plots <- residuals_lit_model +
+  res_logk_plot
