@@ -429,10 +429,16 @@ fs_df_ms <- xrd_s4_df %>%
                 Name),
             by = "Name",
             relationship = "many-to-many") %>%
-  filter(Structure_source == "New"
-         & Name != "F[4]*-N^{Cl}*Ms-OMe-P^t*Bu[3]-MeCN")
+  filter(Name %in% c("LIHZAE", "BEVCUB",
+                   "BEVCAH", "BEVCIP")
+         | (Structure_source == "New"
+            & 
+            Name != 
+              "F[4]*-N^{Cl}*Ms-OMe-P^t*Bu[3]-MeCN")) %>%
+  group_by(Name, Structure_source) %>%
+  summarize_all(mean)
 
-# Plot for Fig. 2
+# Plot for Figure 6
 back_front_strain_plot <- ggplot() +
   geom_ribbon(data = data.frame("Potential" = c(-5, 
                                                 5),
@@ -477,10 +483,10 @@ back_front_strain_plot <- ggplot() +
                    parse = T,
                    nudge_y = 8,
                    nudge_x = 5,
-                   size = 3.5) +
+                   size = 4) +
   geom_label_repel(data = fs_df_ms %>%
                      filter(S4_prime_P_trans_N < 24
-                            & S4_prime_P_trans_N > 0),
+                            & S4_prime_P_trans_N > 8),
                    aes(
                      x = max_dev_angle_PtN,
                      y = S4_prime_P_trans_N,
@@ -488,7 +494,7 @@ back_front_strain_plot <- ggplot() +
                    parse = T,
                    nudge_y = -5,
                    nudge_x = 5,
-                   size = 3.5) +
+                   size = 4) +
   geom_label_repel(data = fs_df_ms %>%
                      filter(Coordination_Number == 3),
                    aes(
@@ -498,14 +504,16 @@ back_front_strain_plot <- ggplot() +
                    parse = T,
                    nudge_y = 7,
                    nudge_x = 3,
-                   size = 3.5) + 
+                   size = 4) + 
   geom_point(data = fs_df_ms,
              aes(fill = 
                    as.factor(
                      Coordination_Number),
                  x = max_dev_angle_PtN,
                  y = S4_prime_P_trans_N),
-             pch = 21,
+             pch = if_else(
+               fs_df_ms$Structure_source == "New",
+                           21,22),
              size = 4) +
   scale_fill_manual(values = c("#636C9D",
                                "#B71B1B")) +
@@ -557,3 +565,102 @@ fig_2_strain_plot_se <- back_front_strain_plot +
                  aes(y = S4_prime_P_trans_N,
                      xmin = lwr_phi_PtN,
                      xmax = upr_phi_PtN))
+
+#============================
+# Reviewer 3 additional plots
+#============================
+# Merge dfs
+r3_df <- merge(xrd_lengths,
+               xrd_front_strain_df) %>%
+  left_join(xrd_t4_df %>%
+              group_by(Code) %>%
+              summarise(across(c(tau_4, 
+                                 tau_4_prime), 
+                               mean, 
+                               na.rm = T)) %>%
+              mutate(Code = as.numeric(Code)),
+            by = "Code")
+
+# Plot of S4 against Pd-P trans N length
+S4_Pd_P_length_plot <- ggplot(r3_df,
+                              aes(
+                                x = S4_prime_P_trans_N,
+                                y = Pd.P_transN_length)) +
+  geom_point(aes(shape = Structure_source),
+             color = if_else(
+    r3_df$Coordination_Number == 3,
+    "#636C9D",
+    "#B71B1B"),
+    size = 3) +
+  labs(x = expression(paste(
+    {P}^{trans-N},
+    " Symmetric Deformation Coordinate (S4')")),
+       y = expression(paste("Pd-",
+                            {P}^{trans-N},
+                            " Bond Length (",
+                            ring(A),
+                            ")"))) +
+  themething +
+  theme(legend.position = "bottom")
+
+# Tau 4 prime and Pd-P trans N plot
+t4prime_Pd_P_length_plot <- ggplot(r3_df,
+                              aes(
+                                x = tau_4_prime,
+                                y = Pd.P_transN_length)) +
+  geom_point(aes(shape = Structure_source),
+             color = if_else(
+               r3_df$Coordination_Number == 3,
+               "#636C9D",
+               "#B71B1B"),
+             size = 3) +
+  labs(x = expression(paste(tau[4],
+                            "' Geometry Index")),
+    y = expression(paste("Pd-",
+                         {P}^{trans-N},
+                         " Bond Length (",
+                         ring(A),
+                         ")"))) +
+  themething +
+  theme(legend.position = "bottom")
+
+# Phi and Pd-P trans N length plot
+phi_Pd_P_length_plot <- ggplot(r3_df,
+                                   aes(
+                                     x = max_dev_angle_PtN,
+                                     y = Pd.P_transN_length)) +
+  geom_point(aes(shape = Structure_source),
+             color = if_else(
+               r3_df$Coordination_Number == 3,
+               "#636C9D",
+               "#B71B1B"),
+             size = 3) +
+  labs(x = "Trisector deviation (φ, °)",
+    y = expression(paste("Pd-",
+                         {P}^{trans-N},
+                         " Bond Length (",
+                         ring(A),
+                         ")"))) +
+  themething +
+  theme(legend.position = "bottom")
+
+# Plot of front and back strain with all lit
+# complexes included
+fs_bs_all_complexes <- ggplot(r3_df,
+                               aes(
+                                 x = max_dev_angle_PtN,
+                                 y = S4_prime_P_trans_N)) +
+  geom_point(aes(shape = Structure_source),
+             color = if_else(
+               r3_df$Coordination_Number == 3,
+               "#636C9D",
+               "#B71B1B"),
+             size = 3) +
+  labs(x = "Trisector deviation (φ, °)",
+       y = expression(paste(
+         {P}^{trans-N},
+         " Symmetric Deformation Coordinate (S4')"))) +
+  themething +
+  theme(legend.position = "bottom")
+
+print(fs_bs_all_complexes)
