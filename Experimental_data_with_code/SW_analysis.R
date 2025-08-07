@@ -123,7 +123,9 @@ all_SW <- SW_comb(SW_file_list) %>%
                 "dcype", 
                 "dppe", 
                 "Fdppe",
-                "dppm"),
+                "dppm",
+                "dmpe",
+                "dppbz"),
     "bidentate",
     "monodentate"))
 
@@ -136,8 +138,8 @@ all_free_L_SW <- SW_comb(SW_file_list) %>%
 # Get the first oxidation potential 
 # All the ligands
 first_oxidation_potential_all <- SW_peaks(all_SW,
-                                          0.5,
-                                          1e-6,
+                                          0.4,
+                                          5e-7,
                                           1)
 
 # Bidentate
